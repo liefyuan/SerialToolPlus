@@ -209,6 +209,20 @@
       </item>
      </layout>
     </item>
+    <item row="0" column="2">
+     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0">
+      <item>
+       <widget class="QCustomPlot" name="timePlot" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>500</width>
+          <height>192</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
     <item row="1" column="0">
      <widget class="QPushButton" name="btnOpenPort">
       <property name="text">
@@ -283,6 +297,14 @@
    </property>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QCustomPlot</class>
+   <extends>QWidget</extends>
+   <header>QCustomPlot.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

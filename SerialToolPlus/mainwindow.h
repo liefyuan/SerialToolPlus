@@ -10,6 +10,7 @@
 #include <QDebug>
 #include <QThread>
 #include <QSettings>
+#include "qcustomplot.h"
 
 #include"serialportplus.h"
 
@@ -29,6 +30,8 @@ public:
     void initUI();
     //端口初始化函数
     void initSerialPort();
+    // 初始化图表
+    void initPlot();
     //界面关闭事件
     void closeEvent(QCloseEvent *event);
 
@@ -48,6 +51,10 @@ private:
     // 记录上一次的配置
     QSettings *gSetting;
 
+    QPointF g_new_data;
+
+    QPointF g_last_data;
+
 signals:
 
     // 分别是界面对串口发出的启动、停止和发送数据的信号
@@ -61,6 +68,8 @@ public slots:
     void started();
     void stoped(int status);
     void receiveData(QByteArray data);
+    void rawDataDecode(QByteArray data);
+
 
 private slots:
     void timeUp();

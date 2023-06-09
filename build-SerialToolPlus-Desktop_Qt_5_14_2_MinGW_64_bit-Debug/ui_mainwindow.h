@@ -25,6 +25,7 @@
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
+#include "QCustomPlot.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -56,6 +57,8 @@ public:
     QVBoxLayout *verticalLayout_2;
     QPlainTextEdit *RecveeiveplainTextEdit;
     QPlainTextEdit *SendplainTextEdit;
+    QVBoxLayout *verticalLayout_3;
+    QCustomPlot *timePlot;
     QPushButton *btnOpenPort;
     QHBoxLayout *horizontalLayout_7;
     QCheckBox *checkBox;
@@ -199,6 +202,17 @@ public:
 
 
         gridLayout->addLayout(verticalLayout_2, 0, 1, 1, 1);
+
+        verticalLayout_3 = new QVBoxLayout();
+        verticalLayout_3->setObjectName(QString::fromUtf8("verticalLayout_3"));
+        timePlot = new QCustomPlot(centralwidget);
+        timePlot->setObjectName(QString::fromUtf8("timePlot"));
+        timePlot->setMinimumSize(QSize(500, 192));
+
+        verticalLayout_3->addWidget(timePlot);
+
+
+        gridLayout->addLayout(verticalLayout_3, 0, 2, 1, 1);
 
         btnOpenPort = new QPushButton(centralwidget);
         btnOpenPort->setObjectName(QString::fromUtf8("btnOpenPort"));

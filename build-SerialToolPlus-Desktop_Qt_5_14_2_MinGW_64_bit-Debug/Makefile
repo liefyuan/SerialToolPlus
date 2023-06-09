@@ -248,6 +248,7 @@ Makefile: ../SerialToolPlus/SerialToolPlus.pro ../../../../Software/Qt5.14/5.14.
 		../../../../Software/Qt5.14/5.14.2/mingw73_64/mkspecs/features/yacc.prf \
 		../../../../Software/Qt5.14/5.14.2/mingw73_64/mkspecs/features/lex.prf \
 		../SerialToolPlus/SerialToolPlus.pro \
+		../../../../Software/Qt5.14/5.14.2/mingw73_64/lib/Qt5PrintSupport.prl \
 		../../../../Software/Qt5.14/5.14.2/mingw73_64/lib/Qt5Widgets.prl \
 		../../../../Software/Qt5.14/5.14.2/mingw73_64/lib/Qt5Gui.prl \
 		../../../../Software/Qt5.14/5.14.2/mingw73_64/lib/Qt5SerialPort.prl \
@@ -433,6 +434,7 @@ Makefile: ../SerialToolPlus/SerialToolPlus.pro ../../../../Software/Qt5.14/5.14.
 ../../../../Software/Qt5.14/5.14.2/mingw73_64/mkspecs/features/yacc.prf:
 ../../../../Software/Qt5.14/5.14.2/mingw73_64/mkspecs/features/lex.prf:
 ../SerialToolPlus/SerialToolPlus.pro:
+../../../../Software/Qt5.14/5.14.2/mingw73_64/lib/Qt5PrintSupport.prl:
 ../../../../Software/Qt5.14/5.14.2/mingw73_64/lib/Qt5Widgets.prl:
 ../../../../Software/Qt5.14/5.14.2/mingw73_64/lib/Qt5Gui.prl:
 ../../../../Software/Qt5.14/5.14.2/mingw73_64/lib/Qt5SerialPort.prl:

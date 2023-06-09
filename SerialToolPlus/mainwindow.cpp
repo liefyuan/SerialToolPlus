@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     initUI();
     initSerialPort();
+    initPlot();
 }
 
 MainWindow::~MainWindow()
@@ -23,22 +24,12 @@ MainWindow::~MainWindow()
  */
 void MainWindow::initUI()
 {
-    //扫描当前系统上的端口号
-    QStringList newPortStringList;
-    static QStringList oldPortStringList;
-
-    const auto infos = QSerialPortInfo::availablePorts();
-    for (const QSerialPortInfo &info : infos)
-    {
-        newPortStringList += info.portName();
-    }
-    //更新串口号
-    if(newPortStringList.size() != oldPortStringList.size())
-    {
-        oldPortStringList = newPortStringList;
-        ui->cboPortName->clear();
-        ui->cboPortName->addItems(oldPortStringList);
-    }
+    //增加端口号选择项
+//    for (int i = 1; i <= 15; i++)
+//    {
+//        ui->cboPortName->addItem(QString("COM%1").arg(i));
+//    }
+    ui->cboPortName->addItem(QString("COM%1").arg(14));
 
     //设置端口号波特率
     ui->cboBaudrate->addItem(QString("1200"),QSerialPort::Baud1200);
@@ -113,10 +104,6 @@ void MainWindow::timerUpdate()
             ui->cboPortName->clear();
             ui->cboPortName->addItems(oldPortStringList);
         }
-
-        // 读取上次的设置
-        ui->cboPortName->setCurrentText(gSetting->value("LastSelectSerialPort").toString());
-        ui->cboBaudrate->setCurrentText(gSetting->value("LastSelectSerialBaud").toString());
     }
 }
 
@@ -139,6 +126,27 @@ void MainWindow::initSerialPort()
     connect(&m_serial, &serialportplus::sigStarted,this, &MainWindow::started);
     connect(&m_serial, &serialportplus::sigStop,this, &MainWindow::stoped);
     connect(&m_serial, &serialportplus::sigReceived,this, &MainWindow::receiveData);
+}
+
+void MainWindow::initPlot()
+{
+    /* Setup timePlot */
+    ui->timePlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    ui->timePlot->legend->setVisible(true);
+    QFont legendFont = font();
+    legendFont.setPointSize(10);
+    ui->timePlot->legend->setFont(legendFont);
+    ui->timePlot->legend->setSelectedFont(legendFont);
+    ui->timePlot->legend->setSelectableParts(QCPLegend::spItems);
+    ui->timePlot->yAxis->setLabel("Amplitude");
+    ui->timePlot->xAxis->setLabel("Sample");
+    ui->timePlot->xAxis->setRange(0, 1000);
+    ui->timePlot->yAxis->setRange(0, 300);
+    ui->timePlot->clearGraphs();
+    ui->timePlot->addGraph();
+
+    ui->timePlot->graph()->setPen(QPen(Qt::black));
+    ui->timePlot->graph()->setName("TimeDomainWave");
 }
 
 /*
@@ -181,11 +189,14 @@ void MainWindow::on_btnOpenPort_clicked()
         // 保存设置
         gSetting->setValue("LastSelectSerialPort", ui->cboPortName->currentText());
         gSetting->setValue("LastSelectSerialBaud", ui->cboBaudrate->currentText());
+
+        gSerialSwitchFlg = true;
     }
      //当按钮打开时，关闭串口，向串口子线程发送串口关闭信号
     else
     {
         emit sigStop();
+        gSerialSwitchFlg = false;
     }
 }
 
@@ -225,11 +236,58 @@ void MainWindow::stoped(int status)
     ui->groupBox->setEnabled(true);
 }
 
+void MainWindow::rawDataDecode(QByteArray data)
+{
+    static int32_t cnt = 0;
+    //协议数据结构
+    struct serial_protocol
+    {
+        uint16_t header; // 协议头
+        uint8_t function; // 功能码
+        uint8_t length; // 数据长度
+        uint16_t data; // 数据
+        uint8_t crc_sum; // CRC校验码
+    };
+
+    struct serial_protocol m_serial_data;
+#if 0
+    char*  ch;
+    uint8_t len;
+    ch = data.data();
+    len = data.size();
+
+    memcpy(&m_serial_data, ch, len);
+#else
+    memcpy(&m_serial_data, data.data(), data.size());
+#endif
+
+//    ui->RecveeiveplainTextEdit->appendPlainText( "header:" + QString::number(m_serial_data.header, 16) + "\n" );
+//    ui->RecveeiveplainTextEdit->appendPlainText( "function:" + QString::number(m_serial_data.function, 16) + "\n" );
+//    ui->RecveeiveplainTextEdit->appendPlainText( "length:" + QString::number(m_serial_data.length, 16) + "\n" );
+//    ui->RecveeiveplainTextEdit->appendPlainText( "data:" + QString::number(m_serial_data.data, 16) + "\n" );
+//    ui->RecveeiveplainTextEdit->appendPlainText( "crc_sum:" + QString::number(m_serial_data.crc_sum, 16) + "\n" );
+
+      ui->RecveeiveplainTextEdit->appendPlainText(QString::number(m_serial_data.data, 10) + "\n" );
+
+      g_new_data.setX(cnt++);
+      g_new_data.setY(m_serial_data.data);
+      ui->timePlot->graph(0)->addData(g_last_data.x(), g_last_data.y());
+      //ui->timePlot->xAxis->rescale();
+
+      g_last_data.setX(g_new_data.x());
+      g_last_data.setY(g_new_data.y());
+
+      ui->timePlot->xAxis->setRange(cnt-2000, cnt);
+//      ui->timePlot->yAxis->setRange(-100, 100);
+      ui->timePlot->replot();
+}
+
 /*
  * 函数功能：接收串口子线程发出数据接收的信号，界面接收串口子线程发送的数据，并将其显示到界面上
  */
 void MainWindow::receiveData(QByteArray data)
 {
+#if 0
     //将接收的数据进行转换
     QString strText = QString(data.toHex());
     //获取当前接收数据的时间
@@ -238,6 +296,9 @@ void MainWindow::receiveData(QByteArray data)
     QString  t  = current_date_time.toString("yyyy-MM-dd hh:mm:ss.zzz : ");
     //显示当前接收的数据
     ui->RecveeiveplainTextEdit->appendPlainText( t + strText + "\n" );
+#endif
+    //解析数据
+    rawDataDecode(data);
 }
 
 /*
