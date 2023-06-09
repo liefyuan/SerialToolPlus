@@ -113,10 +113,6 @@ void MainWindow::timerUpdate()
             ui->cboPortName->clear();
             ui->cboPortName->addItems(oldPortStringList);
         }
-
-        // 读取上次的设置
-        ui->cboPortName->setCurrentText(gSetting->value("LastSelectSerialPort").toString());
-        ui->cboBaudrate->setCurrentText(gSetting->value("LastSelectSerialBaud").toString());
     }
 }
 
@@ -181,11 +177,14 @@ void MainWindow::on_btnOpenPort_clicked()
         // 保存设置
         gSetting->setValue("LastSelectSerialPort", ui->cboPortName->currentText());
         gSetting->setValue("LastSelectSerialBaud", ui->cboBaudrate->currentText());
+
+        gSerialSwitchFlg = true;
     }
      //当按钮打开时，关闭串口，向串口子线程发送串口关闭信号
     else
     {
         emit sigStop();
+        gSerialSwitchFlg = false;
     }
 }
 
