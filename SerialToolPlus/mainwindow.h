@@ -11,6 +11,7 @@
 #include <QThread>
 #include <QSettings>
 #include "qcustomplot.h"
+#include <fftw-3.3.5-dll64/fftw3.h>
 
 #include"serialportplus.h"
 
@@ -54,6 +55,14 @@ private:
     QPointF g_new_data;
 
     QPointF g_last_data;
+
+    QVector<double> mSamples;
+    QVector<double> mIndices;
+    QVector<double> mFftIndices;
+
+    fftw_plan mFftPlan;
+    double *mFftIn;
+    double *mFftOut;
 
 signals:
 

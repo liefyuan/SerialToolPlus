@@ -1,6 +1,9 @@
 ﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#define NUM_SAMPLES 96000
+#define SAMPLE_FREQ 48000
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -17,6 +20,10 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+
+    fftw_free(mFftIn);
+    fftw_free(mFftOut);
+    fftw_destroy_plan(mFftPlan);
 }
 
 /*
@@ -91,21 +98,21 @@ void MainWindow::timerUpdate()
 {
     if(!gSerialSwitchFlg)
     {
-//        QStringList newPortStringList;
-//        static QStringList oldPortStringList;
+        QStringList newPortStringList;
+        static QStringList oldPortStringList;
 
-//        const auto infos = QSerialPortInfo::availablePorts();
-//        for (const QSerialPortInfo &info : infos)
-//        {
-//            newPortStringList += info.portName();
-//        }
-//        //更新串口号
-//        if(newPortStringList.size() != oldPortStringList.size())
-//        {
-//            oldPortStringList = newPortStringList;
-//            ui->cboPortName->clear();
-//            ui->cboPortName->addItems(oldPortStringList);
-//        }
+        const auto infos = QSerialPortInfo::availablePorts();
+        for (const QSerialPortInfo &info : infos)
+        {
+            newPortStringList += info.portName();
+        }
+        //更新串口号
+        if(newPortStringList.size() != oldPortStringList.size())
+        {
+            oldPortStringList = newPortStringList;
+            ui->cboPortName->clear();
+            ui->cboPortName->addItems(oldPortStringList);
+        }
     }
 }
 
@@ -149,6 +156,42 @@ void MainWindow::initPlot()
 
     ui->timePlot->graph()->setPen(QPen(Qt::black));
     ui->timePlot->graph()->setName("TimeDomainWave");
+
+    /* Setup freqPlot */
+    ui->freqPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    ui->freqPlot->legend->setVisible(true);
+    legendFont.setPointSize(10);
+    ui->freqPlot->legend->setFont(legendFont);
+    ui->freqPlot->legend->setSelectedFont(legendFont);
+    ui->freqPlot->legend->setSelectableParts(QCPLegend::spItems);
+    ui->freqPlot->yAxis->setLabel("Pmax");
+    ui->freqPlot->xAxis->setLabel("Hz");
+    ui->freqPlot->xAxis->setRange(0, 1000);
+    ui->freqPlot->yAxis->setRange(0, 1000);
+    ui->freqPlot->clearGraphs();
+    ui->freqPlot->addGraph();
+
+    ui->freqPlot->graph()->setPen(QPen(Qt::black));
+    ui->freqPlot->graph()->setName("FrqDomainWave");
+
+
+    /********************fft*******************/
+    for (int i = 0; i < NUM_SAMPLES; i ++) {
+        mIndices.append((double)i);
+        mSamples.append(0);
+    }
+
+    double freqStep = (double)SAMPLE_FREQ / (double)NUM_SAMPLES;
+    double f = 20;
+    while (f < 20000) {
+        mFftIndices.append(f);
+        f += freqStep;
+    }
+
+    /* Set up FFT plan */
+    mFftIn  = fftw_alloc_real(NUM_SAMPLES);
+    mFftOut = fftw_alloc_real(NUM_SAMPLES);
+    mFftPlan = fftw_plan_r2r_1d(NUM_SAMPLES, mFftIn, mFftOut, FFTW_R2HC,FFTW_ESTIMATE);
 }
 
 /*
@@ -287,6 +330,36 @@ void MainWindow::rawDataDecode(QByteArray data)
         ui->timePlot->xAxis->setRange(cnt-300, cnt);
         //      ui->timePlot->yAxis->setRange(-100, 100);
         ui->timePlot->replot();
+
+        /*********************fft*************************/
+        mSamples.append(m_serial_data.data);
+
+        int n = mSamples.length();
+        if (n > 96000)
+        {
+            mSamples = mSamples.mid(n - NUM_SAMPLES,-1);
+
+            memcpy(mFftIn, mSamples.data(), NUM_SAMPLES*sizeof(double));
+
+            fftw_execute(mFftPlan);
+
+            QVector<double> fftVec;
+
+            for (int i = (NUM_SAMPLES/SAMPLE_FREQ)*20;
+                     i < (NUM_SAMPLES/SAMPLE_FREQ)*20000;
+                     i ++) {
+                fftVec.append(abs(mFftOut[i]));
+            }
+
+            ui->freqPlot->graph(0)->setData(mIndices,mSamples);
+            ui->freqPlot->xAxis->setRange(0, 20000);
+            //ui->freqPlot->xAxis->rescale();
+            ui->freqPlot->replot();
+
+            ui->freqPlot->graph(0)->setData(mFftIndices.mid(0,fftVec.length()),fftVec);
+            ui->freqPlot->yAxis->rescale(); // 自动设置最大范围
+            ui->freqPlot->replot();
+        }
     }
     else
     {

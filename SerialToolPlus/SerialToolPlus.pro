@@ -15,6 +15,7 @@ SOURCES += \
     serialportplus.cpp
 
 HEADERS += \
+    fftw-3.3.5-dll64/fftw3.h \
     mainwindow.h \
     qcustomplot.h \
     serialportplus.h
@@ -26,3 +27,6 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+win32:  LIBS  +=  $$PWD/fftw-3.3.5-dll64/libfftw3-3.lib
+unix:  LIBS  +=  -L$$PWD/fftw-3.3.5-dll64/  -lfftw3-3
