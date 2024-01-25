@@ -29,7 +29,7 @@ void MainWindow::initUI()
 //    {
 //        ui->cboPortName->addItem(QString("COM%1").arg(i));
 //    }
-    ui->cboPortName->addItem(QString("COM%1").arg(14));
+//    ui->cboPortName->addItem(QString("COM%1").arg(14));
 
     //设置端口号波特率
     ui->cboBaudrate->addItem(QString("1200"),QSerialPort::Baud1200);
@@ -78,7 +78,9 @@ void MainWindow::initUI()
 
 
     // 读取上次的设置
+    qDebug() << gSetting->value("LastSelectSerialPort").toString();
     ui->cboPortName->setCurrentText(gSetting->value("LastSelectSerialPort").toString());
+    ui->cboPortName->addItem(gSetting->value("LastSelectSerialPort").toString());
     ui->cboBaudrate->setCurrentText(gSetting->value("LastSelectSerialBaud").toString());
 }
 
@@ -89,21 +91,21 @@ void MainWindow::timerUpdate()
 {
     if(!gSerialSwitchFlg)
     {
-        QStringList newPortStringList;
-        static QStringList oldPortStringList;
+//        QStringList newPortStringList;
+//        static QStringList oldPortStringList;
 
-        const auto infos = QSerialPortInfo::availablePorts();
-        for (const QSerialPortInfo &info : infos)
-        {
-            newPortStringList += info.portName();
-        }
-        //更新串口号
-        if(newPortStringList.size() != oldPortStringList.size())
-        {
-            oldPortStringList = newPortStringList;
-            ui->cboPortName->clear();
-            ui->cboPortName->addItems(oldPortStringList);
-        }
+//        const auto infos = QSerialPortInfo::availablePorts();
+//        for (const QSerialPortInfo &info : infos)
+//        {
+//            newPortStringList += info.portName();
+//        }
+//        //更新串口号
+//        if(newPortStringList.size() != oldPortStringList.size())
+//        {
+//            oldPortStringList = newPortStringList;
+//            ui->cboPortName->clear();
+//            ui->cboPortName->addItems(oldPortStringList);
+//        }
     }
 }
 
@@ -140,7 +142,7 @@ void MainWindow::initPlot()
     ui->timePlot->legend->setSelectableParts(QCPLegend::spItems);
     ui->timePlot->yAxis->setLabel("Amplitude");
     ui->timePlot->xAxis->setLabel("Sample");
-    ui->timePlot->xAxis->setRange(0, 1000);
+    ui->timePlot->xAxis->setRange(0, 300);
     ui->timePlot->yAxis->setRange(0, 300);
     ui->timePlot->clearGraphs();
     ui->timePlot->addGraph();
@@ -245,7 +247,7 @@ void MainWindow::rawDataDecode(QByteArray data)
         uint16_t header; // 协议头
         uint8_t function; // 功能码
         uint8_t length; // 数据长度
-        uint16_t data; // 数据
+        uint8_t data; // 数据
         uint8_t crc_sum; // CRC校验码
     };
 
@@ -267,19 +269,41 @@ void MainWindow::rawDataDecode(QByteArray data)
 //    ui->RecveeiveplainTextEdit->appendPlainText( "data:" + QString::number(m_serial_data.data, 16) + "\n" );
 //    ui->RecveeiveplainTextEdit->appendPlainText( "crc_sum:" + QString::number(m_serial_data.crc_sum, 16) + "\n" );
 
-      ui->RecveeiveplainTextEdit->appendPlainText(QString::number(m_serial_data.data, 10) + "\n" );
 
-      g_new_data.setX(cnt++);
-      g_new_data.setY(m_serial_data.data);
-      ui->timePlot->graph(0)->addData(g_last_data.x(), g_last_data.y());
-      //ui->timePlot->xAxis->rescale();
+    if(m_serial_data.header == 0xAAAA)
+    {
+        qDebug() << "find out header!";
 
-      g_last_data.setX(g_new_data.x());
-      g_last_data.setY(g_new_data.y());
+        ui->RecveeiveplainTextEdit->appendPlainText(QString::number(m_serial_data.data, 10));
 
-      ui->timePlot->xAxis->setRange(cnt-2000, cnt);
-//      ui->timePlot->yAxis->setRange(-100, 100);
-      ui->timePlot->replot();
+        g_new_data.setX(cnt++);
+        g_new_data.setY(m_serial_data.data);
+        ui->timePlot->graph(0)->addData(g_last_data.x(), g_last_data.y());
+        //ui->timePlot->xAxis->rescale();
+
+        g_last_data.setX(g_new_data.x());
+        g_last_data.setY(g_new_data.y());
+
+        ui->timePlot->xAxis->setRange(cnt-300, cnt);
+        //      ui->timePlot->yAxis->setRange(-100, 100);
+        ui->timePlot->replot();
+    }
+    else
+    {
+        qDebug() << "Format error!";
+    }
+
+//    g_new_data.setX(cnt++);
+//    g_new_data.setY(m_serial_data.data);
+//    ui->timePlot->graph(0)->addData(g_last_data.x(), g_last_data.y());
+//    //ui->timePlot->xAxis->rescale();
+
+//    g_last_data.setX(g_new_data.x());
+//    g_last_data.setY(g_new_data.y());
+
+//    ui->timePlot->xAxis->setRange(cnt-2000, cnt);
+//    //      ui->timePlot->yAxis->setRange(-100, 100);
+//    ui->timePlot->replot();
 }
 
 /*

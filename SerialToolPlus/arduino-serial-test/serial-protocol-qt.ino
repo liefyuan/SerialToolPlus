@@ -1,8 +1,10 @@
 void setup() {
-  // put your setup code here, to run once:
+    // put your setup code here, to run once:
 
-  Serial.begin(115200);
-
+    Serial.begin(115200);
+    int noise = analogRead(A3);
+    // 使用噪声值作为随机数生成器的种子
+    randomSeed(noise);
 }
 void send_1byte_data(uint8_t data)
 {
@@ -103,12 +105,15 @@ void loop() {
   // put your main code here, to run repeatedly:
     // Serial.println("helloworld!");
 
-    send_1byte_data(0x44);
-    delay(5);
-    send_2byte_data(0x5678);
-    delay(5);
-    send_4byte_data(0x2233, 0x6655);
-    delay(5);
-    send_6byte_data(0x1234, 0x5678, 0x6699);
-    delay(5);
+    send_1byte_data(random(0, 256));
+    delay(10);
+
+    // send_1byte_data(0x44);
+    // delay(10);
+    // send_2byte_data(0x5678);
+    // delay(5);
+    // send_4byte_data(0x2233, 0x6655);
+    // delay(5);
+    // send_6byte_data(0x1234, 0x5678, 0x6699);
+    // delay(5);
 }
